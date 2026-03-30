@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notlarım</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f5f5f0;
+    --surface: #ffffff;
+    --border: #e0ddd6;
+    --text: #1a1a18;
+    --text-muted: #6b6b67;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --danger: #dc2626;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18;
+      --surface: #242422;
+      --border: #38382f;
+      --text: #e8e6e0;
+      --text-muted: #8a8a82;
+      --accent: #3b82f6;
+      --accent-hover: #60a5fa;
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── ÜST BAR ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  header h1 { font-size: 17px; font-weight: 600; flex: 1; }
+
+  .search-wrap {
+    flex: 2;
+    position: relative;
+  }
+
+  .search-wrap input {
+    width: 100%;
+    padding: 8px 12px 8px 36px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .search-wrap input:focus { border-color: var(--accent); }
+
+  .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* ── ANA LAYOUT ── */
+  .app {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── KENAR ÇUBUĞU ── */
+  aside {
+    width: 240px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow-y: auto;
+  }
+
+  .new-note-btn {
+    margin: 12px;
+    padding: 10px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .new-note-btn:hover { background: var(--accent-hover); }
+
+  .sidebar-section { padding: 8px 4px 4px; }
+
+  .sidebar-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding: 4px 12px 8px;
+    text-transform: uppercase;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--text);
+    transition: background 0.1s;
+    margin: 0 4px;
+  }
+
+  .sidebar-item:hover { background: var(--bg); }
+  .sidebar-item.active { background: var(--bg); font-weight: 500; }
+
+  .folder-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .sidebar-count {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  /* ── NOT LİSTESİ ── */
+  .note-list {
+    width: 280px;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+
+  .note-list-header {
+    padding: 14px 16px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+  }
+
+  .note-card {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+    background: var(--surface);
+  }
+
+  .note-card:hover { background: var(--bg); }
+  .note-card.active { background: var(--bg); border-left: 3px solid var(--accent); }
+
+  .note-card-title {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .note-card-preview {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 6px;
+  }
+
+  .note-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .note-card-date {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .priority-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  .p-high   { background: #fee2e2; color: #991b1b; }
+  .p-medium { background: #fef3c7; color: #92400e; }
+  .p-low    { background: #dcfce7; color: #166534; }
+
+  .tag-pill {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 10px;
+    background: var(--border);
+    color: var(--text-muted);
+  }
+
+  .empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  /* ── EDİTÖR ── */
+  .editor {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .editor-toolbar {
+    padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+
+  .editor-toolbar input[type="text"] {
+    flex: 1;
+    font-size: 18px;
+    font-weight: 600;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    outline: none;
+  }
+
+  .editor-toolbar input::placeholder { color: var(--text-muted); }
+
+  .toolbar-actions { display: flex; gap: 8px; align-items: center; }
+
+  select {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-danger  { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+  .btn-ghost   { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+
+  .editor-meta {
+    padding: 10px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .editor-meta label { font-size: 12px; color: var(--text-muted); }
+
+  textarea {
+    flex: 1;
+    padding: 20px;
+    border: none;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.7;
+    resize: none;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .editor-placeholder {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    font-size: 15px;
+  }
+
+  /* ── LOADING / TOAST ── */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .toast.show { opacity: 1; }
+
+  .spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 700px) {
+    aside { display: none; }
+    .note-list { width: 100%; }
+    .editor { display: none; }
+    .editor.mobile-show { display: flex; position: fixed; inset: 0; z-index: 10; background: var(--surface); }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Notlarım</h1>
+  <div class="search-wrap">
+    <span class="search-icon">&#128269;</span>
+    <input type="text" id="searchInput" placeholder="Notlarda ara..." oninput="onSearch(this.value)">
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- KENAR ÇUBUĞU -->
+  <aside>
+    <button class="new-note-btn" onclick="newNote()">+ Yeni Not</button>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Görünüm</div>
+      <div class="sidebar-item active" id="filter-all" onclick="setFilter('all')">
+        <span>&#128221;</span> Tüm notlar
+        <span class="sidebar-count" id="count-all">0</span>
+      </div>
+      <div class="sidebar-item" id="filter-high" onclick="setFilter('high')">
+        <span>&#128308;</span> Yüksek öncelik
+        <span class="sidebar-count" id="count-high">0</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Klasörler</div>
+      <div id="folderList"></div>
+      <div class="sidebar-item" style="color:var(--text-muted); font-size:13px;" onclick="newFolder()">
+        + Klasör ekle
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Etiketler</div>
+      <div id="tagList"></div>
+      <div class="sidebar-item" style="color:var(--text-muted); font-size:13px;" onclick="newTag()">
+        + Etiket ekle
+      </div>
+    </div>
+  </aside>
+
+  <!-- NOT LİSTESİ -->
+  <div class="note-list">
+    <div class="note-list-header" id="listHeader">Tüm notlar</div>
+    <div id="noteCards"></div>
+  </div>
+
+  <!-- EDİTÖR -->
+  <div class="editor" id="editor">
+    <div class="editor-placeholder" id="editorPlaceholder">
+      Bir not seçin veya yeni not oluşturun
+    </div>
+    <div id="editorForm" style="display:none; flex-direction:column; flex:1; overflow:hidden;">
+      <div class="editor-toolbar">
+        <input type="text" id="noteTitle" placeholder="Başlık...">
+        <div class="toolbar-actions">
+          <button class="btn btn-ghost" onclick="cancelEdit()">İptal</button>
+          <button class="btn btn-danger" onclick="deleteCurrentNote()">Sil</button>
+          <button class="btn btn-primary" onclick="saveCurrentNote()">Kaydet</button>
+        </div>
+      </div>
+      <div class="editor-meta">
+        <label>Tür:
+          <select id="noteType">
+            <option value="free_text">Serbest metin</option>
+            <option value="titled">Başlık + içerik</option>
+            <option value="checklist">Madde listesi</option>
+            <option value="markdown">Markdown</option>
+          </select>
+        </label>
+        <label>Öncelik:
+          <select id="notePriority">
+            <option value="">—</option>
+            <option value="high">Yüksek</option>
+            <option value="medium">Orta</option>
+            <option value="low">Düşük</option>
+          </select>
+        </label>
+        <label>Klasör:
+          <select id="noteFolder">
+            <option value="">—</option>
+          </select>
+        </label>
+        <label>Renk:
+          <input type="color" id="noteColor" value="#ffffff" style="width:32px;height:28px;border:1px solid var(--border);border-radius:6px;cursor:pointer;padding:2px;">
+        </label>
+      </div>
+      <textarea id="noteBody" placeholder="Notunu buraya yaz..."></textarea>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbxFLETybv8pt_8wWujB3zMuS_lfU5QTKgqxCqp9giTSDmipb9QaA4rv0ChviDOvQq6hFg/exec';
+
+let notes = [], folders = [], tags = [], noteTags = [];
+let currentNote = null;
+let activeFilter = 'all';
+let searchQuery = '';
+
+// ── BAŞLANGIÇ ────────────────────────────────────────
+
+async function init() {
+  showToast('Yükleniyor...');
+  try {
+    [notes, folders, tags, noteTags] = await Promise.all([
+      api('getNotes'),
+      api('getFolders'),
+      api('getTags'),
+      api('getNoteTags'),
+    ]);
+    renderSidebar();
+    renderNoteList();
+    showToast('Hazır');
+  } catch(e) {
+    showToast('Bağlantı hatası — API URL\'ini kontrol et');
+  }
+}
+
+// ── API ──────────────────────────────────────────────
+
+async function api(action, data) {
+  const url = API_URL + '?action=' + action;
+  const opts = data
+    ? { method: 'POST', body: JSON.stringify(data) }
+    : { method: 'GET' };
+  const res = await fetch(url, opts);
+  return res.json();
+}
+
+// ── RENDER ───────────────────────────────────────────
+
+function renderSidebar() {
+  document.getElementById('count-all').textContent = notes.length;
+  document.getElementById('count-high').textContent =
+    notes.filter(n => n.priority === 'high').length;
+
+  const fl = document.getElementById('folderList');
+  fl.innerHTML = folders.map(f => `
+    <div class="sidebar-item ${activeFilter === 'folder:'+f.id ? 'active' : ''}"
+         onclick="setFilter('folder:${f.id}')">
+      <span class="folder-dot" style="background:${f.color||'#888'}"></span>
+      ${esc(f.name)}
+      <span class="sidebar-count">${notes.filter(n=>n.folder_id===f.id).length}</span>
+    </div>`).join('');
+
+  const tl = document.getElementById('tagList');
+  tl.innerHTML = tags.map(t => `
+    <div class="sidebar-item ${activeFilter === 'tag:'+t.id ? 'active' : ''}"
+         onclick="setFilter('tag:${t.id}')">
+      <span class="tag-pill" style="background:${t.color||'var(--border)'}">${esc(t.name)}</span>
+      <span class="sidebar-count">${noteTags.filter(nt=>nt.tag_id===t.id).length}</span>
+    </div>`).join('');
+
+  const folderSelect = document.getElementById('noteFolder');
+  folderSelect.innerHTML = '<option value="">—</option>' +
+    folders.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+}
+
+function renderNoteList() {
+  let list = [...notes];
+
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    list = list.filter(n =>
+      (n.title||'').toLowerCase().includes(q) ||
+      (n.body||'').toLowerCase().includes(q));
+  }
+
+  if (activeFilter === 'high') {
+    list = list.filter(n => n.priority === 'high');
+  } else if (activeFilter.startsWith('folder:')) {
+    const fid = activeFilter.split(':')[1];
+    list = list.filter(n => n.folder_id === fid);
+  } else if (activeFilter.startsWith('tag:')) {
+    const tid = activeFilter.split(':')[1];
+    const noteIds = noteTags.filter(nt=>nt.tag_id===tid).map(nt=>nt.note_id);
+    list = list.filter(n => noteIds.includes(n.id));
+  }
+
+  list.sort((a,b) => new Date(b.updated_at) - new Date(a.updated_at));
+
+  const container = document.getElementById('noteCards');
+  if (!list.length) {
+    container.innerHTML = '<div class="empty-state">Henüz not yok</div>';
+    return;
+  }
+
+  container.innerHTML = list.map(n => {
+    const myTags = noteTags
+      .filter(nt => nt.note_id === n.id)
+      .map(nt => tags.find(t => t.id === nt.tag_id))
+      .filter(Boolean);
+
+    const priorityMap = { high:'p-high Yüksek', medium:'p-medium Orta', low:'p-low Düşük' };
+    const pb = n.priority && priorityMap[n.priority]
+      ? `<span class="priority-badge ${priorityMap[n.priority].split(' ')[0]}">${priorityMap[n.priority].split(' ')[1]}</span>`
+      : '';
+
+    const tagHtml = myTags.map(t =>
+      `<span class="tag-pill" style="background:${t.color||'var(--border)'}">${esc(t.name)}</span>`
+    ).join('');
+
+    const cardStyle = n.color && n.color !== '#ffffff'
+      ? `style="border-left: 3px solid ${n.color}"`
+      : '';
+
+    return `<div class="note-card ${currentNote?.id===n.id?'active':''}"
+      ${cardStyle} onclick="openNote('${n.id}')">
+      <div class="note-card-title">${esc(n.title) || 'Başlıksız'}</div>
+      <div class="note-card-preview">${esc((n.body||'').substring(0,80))}</div>
+      <div class="note-card-meta">
+        <span class="note-card-date">${formatDate(n.updated_at)}</span>
+        ${pb}${tagHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── NOT İŞLEMLERİ ────────────────────────────────────
+
+function openNote(id) {
+  currentNote = notes.find(n => n.id === id);
+  if (!currentNote) return;
+  showEditorForm();
+  document.getElementById('noteTitle').value    = currentNote.title || '';
+  document.getElementById('noteBody').value     = currentNote.body  || '';
+  document.getElementById('noteType').value     = currentNote.type  || 'free_text';
+  document.getElementById('notePriority').value = currentNote.priority || '';
+  document.getElementById('noteFolder').value   = currentNote.folder_id || '';
+  document.getElementById('noteColor').value    = currentNote.color || '#ffffff';
+  renderNoteList();
+}
+
+function newNote() {
+  currentNote = { id: null };
+  showEditorForm();
+  document.getElementById('noteTitle').value    = '';
+  document.getElementById('noteBody').value     = '';
+  document.getElementById('noteType').value     = 'free_text';
+  document.getElementById('notePriority').value = '';
+  document.getElementById('noteFolder').value   = '';
+  document.getElementById('noteColor').value    = '#ffffff';
+  document.getElementById('noteTitle').focus();
+}
+
+async function saveCurrentNote() {
+  const data = {
+    id:         currentNote?.id || null,
+    title:      document.getElementById('noteTitle').value,
+    body:       document.getElementById('noteBody').value,
+    type:       document.getElementById('noteType').value,
+    priority:   document.getElementById('notePriority').value,
+    folder_id:  document.getElementById('noteFolder').value,
+    color:      document.getElementById('noteColor').value,
+  };
+
+  showToast('Kaydediliyor...');
+  const res = await api('saveNote', data);
+  if (res.success) {
+    data.id = res.id;
+    data.updated_at = new Date().toISOString();
+    const idx = notes.findIndex(n => n.id === data.id);
+    if (idx >= 0) notes[idx] = { ...notes[idx], ...data };
+    else notes.unshift(data);
+    currentNote = data;
+    renderSidebar();
+    renderNoteList();
+    showToast('Kaydedildi');
+  }
+}
+
+async function deleteCurrentNote() {
+  if (!currentNote?.id) { cancelEdit(); return; }
+  if (!confirm('Bu notu silmek istediğinden emin misin?')) return;
+  showToast('Siliniyor...');
+  await api('deleteNote&id=' + currentNote.id);
+  notes = notes.filter(n => n.id !== currentNote.id);
+  currentNote = null;
+  cancelEdit();
+  renderSidebar();
+  renderNoteList();
+  showToast('Silindi');
+}
+
+function cancelEdit() {
+  currentNote = null;
+  document.getElementById('editorPlaceholder').style.display = 'flex';
+  document.getElementById('editorForm').style.display = 'none';
+}
+
+// ── KLASÖR / ETİKET ──────────────────────────────────
+
+async function newFolder() {
+  const name = prompt('Klasör adı:');
+  if (!name) return;
+  const color = '#' + Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0');
+  const res = await api('saveFolder', { name, color });
+  if (res.success) {
+    folders.push({ id: res.id, name, color });
+    renderSidebar();
+    showToast('Klasör oluşturuldu');
+  }
+}
+
+async function newTag() {
+  const name = prompt('Etiket adı:');
+  if (!name) return;
+  const color = '#' + Math.floor(Math.random()*0xffffff).toString(16).padStart(6,'0');
+  const res = await api('saveTag', { name, color });
+  if (res.success) {
+    tags.push({ id: res.id, name, color });
+    renderSidebar();
+    showToast('Etiket oluşturuldu');
+  }
+}
+
+// ── FİLTRE / ARAMA ───────────────────────────────────
+
+function setFilter(filter) {
+  activeFilter = filter;
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById('filter-' + filter);
+  if (el) el.classList.add('active');
+  renderNoteList();
+}
+
+let searchTimer;
+function onSearch(val) {
+  clearTimeout(searchTimer);
+  searchQuery = val;
+  searchTimer = setTimeout(renderNoteList, 200);
+}
+
+// ── YARDIMCI ─────────────────────────────────────────
+
+function showEditorForm() {
+  document.getElementById('editorPlaceholder').style.display = 'none';
+  document.getElementById('editorForm').style.display = 'flex';
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('tr-TR', { day:'numeric', month:'short' });
+}
+
+function esc(str) {
+  return String(str||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+}
+
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+init();
+</script>
+</body>
+</html>
